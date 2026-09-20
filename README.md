@@ -66,7 +66,8 @@ history is. If you would rather measure only public repositories, pass
 
 ```
 --user <login>       GitHub user to measure (default: token owner)
---agent <name>       claude | copilot (default: claude)
+--agent <name>       claude | copilot | cursor | codex | devin |
+                     aider | amp | jules | gemini (default: claude)
 --out <path>         SVG output path (default: cocommit.svg)
 --json <path>        also write the raw counts as JSON
 --theme <name>       dark | light | claude (default: dark)
@@ -100,6 +101,13 @@ it, so it could change. When the qualifier stops filtering, the count comes
 back either empty or equal to your unfiltered total; `cocommit` detects both
 and falls back to matching the trailer as literal text.
 
+**Agents are matched by address, not by name.** Searching for a display name
+also matches unrelated people who share it — `co-authored-by:claude` returns
+commits whose only extra co-author is a human — so each agent is keyed on the
+email address in its trailer. Those addresses were read off real public
+commits; adding one means checking what a tool actually writes, not what its
+documentation says.
+
 **The search index lags.** Commits pushed minutes ago may not be counted yet.
 Since the workflow runs daily, this is invisible in practice.
 
@@ -107,6 +115,24 @@ Since the workflow runs daily, this is invisible in practice.
 agent wrote one line or the whole file, and commits made without the trailer
 do not count at all. It is a measure of how you worked, not of how much the
 machine contributed.
+
+## Supported agents
+
+| Agent | Trailer address |
+|---|---|
+| Claude | `noreply@anthropic.com` |
+| Copilot | `copilot@github.com` |
+| Cursor | `cursoragent@cursor.com` |
+| Codex | `codex@openai.com`, `noreply@openai.com` |
+| Devin | `devin-ai-integration[bot]@users.noreply.github.com` |
+| Gemini | `gemini-code-assist@google.com` and the bot address |
+| Jules | `google-labs-jules[bot]@users.noreply.github.com` |
+| Aider | `aider@aider.chat` |
+| Amp | `amp@ampcode.com` |
+
+Missing one? Find what it writes with
+`git log --format='%b' | grep -i co-authored`, then add an entry to `AGENTS`
+in `src/fetch.js` — or open an issue with the trailer and I'll add it.
 
 ## Development
 

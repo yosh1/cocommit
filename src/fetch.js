@@ -22,16 +22,66 @@ const API = 'https://api.github.com';
  * carries a full-text `fallback` that matches the trailer as literal text.
  * Both forms were measured to return identical counts (10,203) in 2026-09.
  */
+/**
+ * Every agent is matched by the email address in its trailer, never by its
+ * display name. A name matches any co-author who happens to share it — a
+ * search for `co-authored-by:claude` also returns commits whose only real
+ * match is an unrelated human on the same commit — while the address is the
+ * agent's own identity.
+ *
+ * Addresses below were read from real public commits rather than from
+ * vendor documentation. Where a tool writes more than one address, the
+ * alternates are OR'd together; GitHub's search accepts the OR of qualifiers
+ * in parentheses.
+ */
 export const AGENTS = {
   claude: {
     label: 'Claude',
-    query: 'co-authored-by:claude',
+    query: 'co-authored-by:noreply@anthropic.com',
     fallback: '"Co-Authored-By: Claude"',
   },
   copilot: {
     label: 'Copilot',
     query: 'co-authored-by:copilot@github.com',
     fallback: '"Co-authored-by: Copilot"',
+  },
+  cursor: {
+    label: 'Cursor',
+    query: 'co-authored-by:cursoragent@cursor.com',
+    fallback: '"Co-authored-by: Cursor"',
+  },
+  codex: {
+    label: 'Codex',
+    // The CLI has shipped both addresses over time.
+    query: '(co-authored-by:codex@openai.com OR co-authored-by:noreply@openai.com)',
+    fallback: '"Co-authored-by: codex"',
+  },
+  devin: {
+    label: 'Devin',
+    query: 'co-authored-by:devin-ai-integration[bot]@users.noreply.github.com',
+    fallback: '"Co-Authored-By: Devin AI"',
+  },
+  aider: {
+    label: 'Aider',
+    // Aider appends the model it used, so the display name varies per commit
+    // while the address stays put — exactly why addresses are the key here.
+    query: 'co-authored-by:aider@aider.chat',
+    fallback: '"Co-authored-by: aider"',
+  },
+  amp: {
+    label: 'Amp',
+    query: 'co-authored-by:amp@ampcode.com',
+    fallback: '"Co-authored-by: Amp"',
+  },
+  jules: {
+    label: 'Jules',
+    query: 'co-authored-by:google-labs-jules[bot]@users.noreply.github.com',
+    fallback: '"Co-authored-by: google-labs-jules"',
+  },
+  gemini: {
+    label: 'Gemini',
+    query: '(co-authored-by:gemini-code-assist@google.com OR co-authored-by:gemini-code-assist[bot]@users.noreply.github.com)',
+    fallback: '"Co-authored-by: gemini-code-assist"',
   },
 };
 

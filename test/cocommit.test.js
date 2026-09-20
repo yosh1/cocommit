@@ -7,7 +7,7 @@ import { renderCard, THEMES } from '../src/render.js';
  * A client that answers from a map of substring → count, and records queries.
  *
  * Entries are tested longest-first so that a specific pattern such as
- * `co-authored-by:claude` wins over the broad `author:kai` that every real
+ * `co-authored-by:noreply@anthropic.com` wins over the broad `author:kai` that every real
  * query also contains.
  */
 function stubClient(answers, { onQuery } = {}) {
@@ -41,7 +41,7 @@ test('monthRange walks backwards across a year boundary', () => {
 });
 
 test('collect reports totals and share', async () => {
-  const client = stubClient({ 'co-authored-by:claude': 40, 'author:kai': 100 });
+  const client = stubClient({ 'co-authored-by:noreply@anthropic.com': 40, 'author:kai': 100 });
   const data = await collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') });
 
   assert.equal(data.total, 100);
@@ -53,7 +53,7 @@ test('collect reports totals and share', async () => {
 test('collect skips the agent query for months with no commits at all', async () => {
   // A month total of zero bounds the co-authored count at zero, so spending a
   // second rate-limited query on it would be waste.
-  const client = stubClient({ 'author-date': 0, 'co-authored-by:claude': 5, 'author:kai': 10 });
+  const client = stubClient({ 'author-date': 0, 'co-authored-by:noreply@anthropic.com': 5, 'author:kai': 10 });
   await collect({ client, user: 'kai', months: 3, now: new Date('2026-09-15T00:00:00Z') });
 
   const dated = client.asked.filter((q) => q.includes('author-date'));
@@ -65,7 +65,7 @@ test('collect falls back to full-text when the qualifier matches nothing', async
   // such that it matches nothing, while the literal trailer text still does.
   const client = stubClient({
     '"Co-Authored-By: Claude"': 30,
-    'co-authored-by:claude': 0,
+    'co-authored-by:noreply@anthropic.com': 0,
     'author:kai': 100,
   });
   const data = await collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') });
@@ -91,7 +91,7 @@ test('collect falls back when an unparsed qualifier is ignored entirely', async 
 });
 
 test('collect refuses an impossible count it cannot repair', async () => {
-  const client = stubClient({ 'co-authored-by:claude': 500, 'author:kai': 100 });
+  const client = stubClient({ 'co-authored-by:noreply@anthropic.com': 500, 'author:kai': 100 });
   await assert.rejects(
     () => collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') }),
     /only 100 commits in total/,
@@ -100,9 +100,9 @@ test('collect refuses an impossible count it cannot repair', async () => {
 
 test('collect clamps a month that reports more co-authored than total', async () => {
   const client = stubClient({
-    'co-authored-by:claude author-date': 99,
+    'co-authored-by:noreply@anthropic.com author-date': 99,
     'author-date': 10,
-    'co-authored-by:claude': 40,
+    'co-authored-by:noreply@anthropic.com': 40,
     'author:kai': 100,
   });
   const data = await collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') });
@@ -228,7 +228,31 @@ test('GitHubClient surfaces non-rate-limit failures', async () => {
 test('each agent defines both a qualifier and a full-text fallback', () => {
   for (const [name, a] of Object.entries(AGENTS)) {
     assert.ok(a.label, `${name} has a label`);
-    assert.ok(a.query.startsWith('co-authored-by:'), `${name} has a qualifier`);
     assert.ok(a.fallback.startsWith('"'), `${name} has a quoted fallback`);
+    // Single or OR'd, every clause must be a co-authored-by qualifier.
+    const clauses = a.query.replace(/^\(|\)$/g, '').split(' OR ');
+    for (const c of clauses) {
+      assert.ok(c.startsWith('co-authored-by:'), `${name}: "${c}" is a qualifier`);
+    }
+  }
+});
+
+test('agents are matched by email address, never by display name', () => {
+  // A display name matches any co-author who shares it. Measured against
+  // real data, `co-authored-by:claude` also returned a commit whose only
+  // extra co-author was an unrelated human, so every agent keys on the
+  // address in its trailer instead.
+  for (const [name, a] of Object.entries(AGENTS)) {
+    const clauses = a.query.replace(/^\(|\)$/g, '').split(' OR ');
+    for (const c of clauses) {
+      assert.match(c, /co-authored-by:\S+@\S+/, `${name}: "${c}" targets an address`);
+    }
+  }
+});
+
+test('the agent roster covers the tools people actually use', () => {
+  // Each of these was verified to return real commits before being added.
+  for (const name of ['claude', 'copilot', 'cursor', 'codex', 'devin', 'aider', 'amp', 'jules', 'gemini']) {
+    assert.ok(AGENTS[name], `${name} is available`);
   }
 });
