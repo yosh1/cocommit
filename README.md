@@ -18,10 +18,10 @@ $ git log --format='%b' | grep -c 'Co-Authored-By: Claude'
 
 ## Install
 
-Nothing to install — it runs from npm and has no dependencies.
+Nothing to install — it has no dependencies and runs straight from source.
 
 ```console
-$ GITHUB_TOKEN=ghp_... npx cocommit --user your-login
+$ GITHUB_TOKEN=ghp_... npx github:yosh1/cocommit --user your-login
 ```
 
 You need a [personal access token][pat] with the **`repo`** scope. Without it

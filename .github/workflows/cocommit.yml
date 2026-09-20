@@ -35,7 +35,7 @@ jobs:
           # so a PAT is required rather than optional.
           GITHUB_TOKEN: ${{ secrets.COCOMMIT_TOKEN }}
         run: |
-          npx --yes cocommit \
+          npx --yes github:yosh1/cocommit \
             --out cocommit.svg \
             --json cocommit.json \
             --theme dark \
