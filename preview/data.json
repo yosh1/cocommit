@@ -3,10 +3,10 @@
   "agent": "claude",
   "agentLabel": "Claude",
   "visibility": "all",
-  "generatedAt": "2026-09-20T17:02:38.136Z",
-  "total": 26198,
-  "coauthored": 10223,
-  "share": 0.390220627528819,
+  "generatedAt": "2026-09-20T17:39:49.985Z",
+  "total": 26251,
+  "coauthored": 10261,
+  "share": 0.39088034741533656,
   "series": [
     {
       "month": "2025-10",
@@ -36,12 +36,12 @@
     {
       "month": "2026-03",
       "total": 820,
-      "coauthored": 560
+      "coauthored": 559
     },
     {
       "month": "2026-04",
       "total": 1332,
-      "coauthored": 980
+      "coauthored": 976
     },
     {
       "month": "2026-05",
@@ -56,17 +56,17 @@
     {
       "month": "2026-07",
       "total": 2523,
-      "coauthored": 1676
+      "coauthored": 1675
     },
     {
       "month": "2026-08",
       "total": 2472,
-      "coauthored": 1725
+      "coauthored": 1724
     },
     {
       "month": "2026-09",
-      "total": 2512,
-      "coauthored": 2022
+      "total": 2565,
+      "coauthored": 2067
     }
   ]
 }
