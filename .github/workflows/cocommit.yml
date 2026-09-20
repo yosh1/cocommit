@@ -1,0 +1,55 @@
+# Regenerate the card and commit it if the numbers moved.
+#
+# Copy this into your own repository (usually the profile repo named after
+# your username) and add a COCOMMIT_TOKEN secret: a personal access token with
+# the `repo` scope, so private commits are counted too.
+name: cocommit
+
+on:
+  schedule:
+    # Daily. Search indexes lag by minutes, so there is nothing to gain from
+    # running more often, and every run spends the shared search quota.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cocommit
+  cancel-in-progress: false
+
+jobs:
+  card:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate the card
+        env:
+          # The default GITHUB_TOKEN cannot search across your repositories,
+          # so a PAT is required rather than optional.
+          GITHUB_TOKEN: ${{ secrets.COCOMMIT_TOKEN }}
+        run: |
+          npx --yes cocommit \
+            --out cocommit.svg \
+            --json cocommit.json \
+            --theme dark \
+            --months 12
+
+      - name: Commit if the numbers changed
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add cocommit.svg cocommit.json
+          # --quiet exits non-zero when there is something staged.
+          if git diff --cached --quiet; then
+            echo "No change in the numbers; nothing to commit."
+          else
+            git commit -m 'chore: update cocommit card'
+            git push
+          fi

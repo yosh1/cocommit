@@ -1,0 +1,11 @@
+{
+  "name": "cocommit",
+  "version": "0.1.0",
+  "description": "Count the commits you and an AI agent wrote together, as an SVG card for your GitHub profile.",
+  "type": "module",
+  "bin": { "cocommit": "src/cli.js" },
+  "files": ["src"],
+  "scripts": { "test": "node --test test/*.test.js" },
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}

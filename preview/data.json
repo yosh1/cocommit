@@ -1,0 +1,72 @@
+{
+  "user": "yosh1",
+  "agent": "claude",
+  "agentLabel": "Claude",
+  "visibility": "all",
+  "generatedAt": "2026-09-20T17:02:38.136Z",
+  "total": 26198,
+  "coauthored": 10223,
+  "share": 0.390220627528819,
+  "series": [
+    {
+      "month": "2025-10",
+      "total": 50,
+      "coauthored": 42
+    },
+    {
+      "month": "2025-11",
+      "total": 90,
+      "coauthored": 75
+    },
+    {
+      "month": "2025-12",
+      "total": 119,
+      "coauthored": 86
+    },
+    {
+      "month": "2026-01",
+      "total": 370,
+      "coauthored": 130
+    },
+    {
+      "month": "2026-02",
+      "total": 759,
+      "coauthored": 486
+    },
+    {
+      "month": "2026-03",
+      "total": 820,
+      "coauthored": 560
+    },
+    {
+      "month": "2026-04",
+      "total": 1332,
+      "coauthored": 980
+    },
+    {
+      "month": "2026-05",
+      "total": 897,
+      "coauthored": 531
+    },
+    {
+      "month": "2026-06",
+      "total": 2339,
+      "coauthored": 1612
+    },
+    {
+      "month": "2026-07",
+      "total": 2523,
+      "coauthored": 1676
+    },
+    {
+      "month": "2026-08",
+      "total": 2472,
+      "coauthored": 1725
+    },
+    {
+      "month": "2026-09",
+      "total": 2512,
+      "coauthored": 2022
+    }
+  ]
+}
