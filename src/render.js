@@ -134,7 +134,7 @@ ${style}
 
 <text x="22" y="92" fill="${theme.accent}" font-family="${MONO}" font-size="32" font-weight="600" class="${animate ? 'fade' : ''}">${compact(data.coauthored)}</text>
 <text x="22" y="110" fill="${theme.text}" font-family="${FONT}" font-size="11">co-authored commits</text>
-<text x="22" y="126" fill="${theme.text}" font-family="${FONT}" font-size="11">of ${fmt(data.total)} total</text>
+<text x="22" y="126" fill="${theme.text}" font-family="${FONT}" font-size="11">of ${fmt(data.total)}${data.series.length ? ` in the last ${data.series.length} months` : ' total'}</text>
 
 <circle cx="${ringCx}" cy="${ringCy}" r="${R}" fill="none" stroke="${theme.track}" stroke-width="7"/>
 <circle cx="${ringCx}" cy="${ringCy}" r="${R}" fill="none" stroke="${theme.accent}" stroke-width="7"

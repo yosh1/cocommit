@@ -50,14 +50,58 @@ test('collect reports totals and share', async () => {
   assert.equal(data.agentLabel, 'Claude');
 });
 
+test('collect measures the headline over the same months as the chart', async () => {
+  // An all-time denominator counts every commit from before the agent
+  // existed, so the headline would disagree with the bars printed under it.
+  const client = stubClient({
+    'author-date:2025-10-01..2026-09-30 co-authored-by:noreply@anthropic.com': 70,
+    'author-date:2025-10-01..2026-09-30': 100,
+    'co-authored-by:noreply@anthropic.com': 40,
+    'author:kai': 1000,
+  });
+  const data = await collect({ client, user: 'kai', months: 12, now: new Date('2026-09-15T00:00:00Z') });
+
+  assert.equal(data.total, 100);
+  assert.equal(data.coauthored, 70);
+  assert.equal(data.share, 0.7);
+  assert.equal(data.since, '2025-10-01');
+  assert.equal(data.until, '2026-09-30');
+  assert.ok(
+    client.asked.every((q) => q.includes('author-date:')),
+    'no query may reach outside the window',
+  );
+});
+
+test('collect keeps the fallback inside the window too', async () => {
+  const client = stubClient({
+    'author-date:2026-09-01..2026-09-30 "Co-Authored-By: Claude"': 30,
+    'author:kai': 100,
+  });
+  const data = await collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') });
+
+  assert.equal(data.coauthored, 30);
+});
+
+test('collect leaves merge commits out of every count', async () => {
+  // A merge carries no trailer of its own and its work is already counted in
+  // the commits it brought in, so it would only dilute the share.
+  const client = stubClient({ 'co-authored-by:noreply@anthropic.com': 4, 'author:kai': 10 });
+  await collect({ client, user: 'kai', months: 3, now: new Date('2026-09-15T00:00:00Z') });
+
+  assert.ok(client.asked.length > 0);
+  assert.ok(client.asked.every((q) => q.includes('merge:false')));
+});
+
 test('collect skips the agent query for months with no commits at all', async () => {
   // A month total of zero bounds the co-authored count at zero, so spending a
   // second rate-limited query on it would be waste.
   const client = stubClient({ 'author-date': 0, 'co-authored-by:noreply@anthropic.com': 5, 'author:kai': 10 });
   await collect({ client, user: 'kai', months: 3, now: new Date('2026-09-15T00:00:00Z') });
 
-  const dated = client.asked.filter((q) => q.includes('author-date'));
-  assert.equal(dated.length, 3, 'one query per month, not two');
+  // A monthly range starts and ends in the same month; the headline's spans
+  // the whole window.
+  const monthly = client.asked.filter((q) => /author-date:(\d{4}-\d{2})-01\.\.\1-/.test(q));
+  assert.equal(monthly.length, 3, 'one query per month, not two');
 });
 
 test('collect falls back to full-text when the qualifier matches nothing', async () => {
@@ -100,14 +144,14 @@ test('collect refuses an impossible count it cannot repair', async () => {
 
 test('collect clamps a month that reports more co-authored than total', async () => {
   const client = stubClient({
-    'co-authored-by:noreply@anthropic.com author-date': 99,
-    'author-date': 10,
+    'co-authored-by:noreply@anthropic.com author-date:2026-09-01..2026-09-30': 99,
+    'author-date:2026-09-01..2026-09-30': 10,
     'co-authored-by:noreply@anthropic.com': 40,
     'author:kai': 100,
   });
-  const data = await collect({ client, user: 'kai', months: 1, now: new Date('2026-09-15T00:00:00Z') });
+  const data = await collect({ client, user: 'kai', months: 2, now: new Date('2026-09-15T00:00:00Z') });
 
-  assert.equal(data.series[0].coauthored, 10, 'a bar cannot exceed its track');
+  assert.equal(data.series[1].coauthored, 10, 'a bar cannot exceed its track');
 });
 
 test('collect does not invent a fallback for a genuinely zero history', async () => {
@@ -151,6 +195,7 @@ test('renderCard states the real numbers', () => {
   assert.match(svg, /26,193/);
   assert.match(svg, /10\.2k/);
   assert.match(svg, /39%/);
+  assert.match(svg, /of 26,193 in the last 2 months/, 'the total names its window');
 });
 
 test('renderCard escapes user-controlled text', () => {
