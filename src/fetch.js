@@ -168,22 +168,38 @@ export function monthRange(end, count) {
 /**
  * Collect the totals and the monthly series for one user.
  *
+ * The headline totals cover the same months as the chart, not all of history.
+ * An all-time denominator counts every commit written before the agent
+ * existed, so a history that is now mostly co-authored reads far lower than
+ * the bars beside it — measured on one real account, 39% against 70% for the
+ * same twelve months.
+ *
+ * Merge commits are excluded from every count. They carry no trailer of their
+ * own, and a merged pull request's work is already counted in the commits it
+ * brought in, so including them only adds a second, never-co-authored copy.
+ *
  * Costs 2 + 2*months queries. At 28/min the default 12 months takes ~56s,
  * which is why this is built to run in scheduled CI rather than per request.
  */
 export async function collect({ client, user, agent = 'claude', months = 12, visibility = 'all', now = new Date() }) {
   const { query, fallback, label } = AGENTS[agent] ?? AGENTS.claude;
   const scope = visibility === 'public' ? ' is:public' : '';
-  const base = `author:${user}${scope}`;
+  const base = `author:${user} merge:false${scope}`;
 
-  const total = await client.search(base);
+  const end = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  const span = monthRange(end, months);
+  const since = `${span[0]}-01`;
+  const until = monthEnd(span[span.length - 1]);
+  const period = `${base} author-date:${since}..${until}`;
+
+  const total = await client.search(period);
 
   // Decide once whether the undocumented qualifier still works, then reuse
   // that choice for every later query so the series stays self-consistent.
   // A qualifier GitHub no longer parses is treated as free text, which
   // silently matches nothing rather than erroring — hence the zero check.
   let agentQuery = query;
-  let coauthored = await client.search(`${base} ${query}`);
+  let coauthored = await client.search(`${period} ${query}`);
 
   // Co-authored commits are a strict subset of all commits, so a count equal
   // to the total means the qualifier did not filter at all — GitHub matched
@@ -193,7 +209,7 @@ export async function collect({ client, user, agent = 'claude', months = 12, vis
   // unfiltered total, which would otherwise be published as a proud 100%.
   const unusable = (n) => n === 0 || n >= total;
   if (unusable(coauthored) && total > 0) {
-    const viaFallback = await client.search(`${base} ${fallback}`);
+    const viaFallback = await client.search(`${period} ${fallback}`);
     if (viaFallback > 0 && viaFallback < total) {
       client.log(`'${query}' did not filter as expected; using full-text trailer match`);
       agentQuery = fallback;
@@ -206,9 +222,8 @@ export async function collect({ client, user, agent = 'claude', months = 12, vis
     }
   }
 
-  const end = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
   const series = [];
-  for (const month of monthRange(end, months)) {
+  for (const month of span) {
     const range = `author-date:${month}-01..${monthEnd(month)}`;
     const monthTotal = await client.search(`${base} ${range}`);
     // Skip the second query when the month is empty: the co-authored count
@@ -224,6 +239,8 @@ export async function collect({ client, user, agent = 'claude', months = 12, vis
     agent,
     agentLabel: label,
     visibility,
+    since,
+    until,
     generatedAt: now.toISOString(),
     total,
     coauthored,

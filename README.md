@@ -71,7 +71,8 @@ history is. If you would rather measure only public repositories, pass
 --out <path>         SVG output path (default: cocommit.svg)
 --json <path>        also write the raw counts as JSON
 --theme <name>       dark | light | claude (default: dark)
---months <n>         months in the bar chart, 1-24 (default: 12)
+--months <n>         months measured, for both the totals and the
+                     bar chart, 1-24 (default: 12)
 --visibility <what>  all | public (default: all)
 --title <text>       override the card heading
 --no-animate         render a static card
@@ -92,7 +93,7 @@ minute and is paced to stay inside the limit.
 
 [search]: https://docs.github.com/en/search-github/searching-commits
 
-Three caveats worth knowing:
+A few caveats worth knowing:
 
 **The qualifier is undocumented.** `co-authored-by:` works — a query for
 `co-authored-by:copilot@github.com` returns a different count than one for
@@ -115,6 +116,31 @@ Since the workflow runs daily, this is invisible in practice.
 agent wrote one line or the whole file, and commits made without the trailer
 do not count at all. It is a measure of how you worked, not of how much the
 machine contributed.
+
+**The totals cover the chart's window, and skip merges.** The percentage is
+taken over the same months as the bars, not your whole history: commits from
+before you used an agent would otherwise hold it down indefinitely. Merge
+commits are left out of both sides, since they carry no trailer of their own
+and the work they bring in is already counted.
+
+**Lower than you expected?** The denominator is every non-merge commit
+authored by your account, so a few habits pull the share down:
+
+- *Scheduled jobs that commit as you.* A cron job that commits under your name
+  and email counts as your work. Give it its own identity.
+- *Commits authored by the agent itself.* If a tool commits as
+  `Claude <noreply@anthropic.com>` rather than as you with a trailer, the
+  commit is not yours as far as search is concerned, and counts on neither
+  side.
+- *Squash merges that drop the body.* When a repository squashes with the pull
+  request title only, the trailers in the branch's commits are discarded.
+  Use "Default to pull request title and commit details" to keep them.
+- *Tools that do not add the trailer.* Nothing marks those commits as
+  co-authored after the fact.
+
+Check your own history with
+`git log --author=<you> --no-merges --format='%b' | grep -ci co-authored`
+against `git log --author=<you> --no-merges --oneline | wc -l`.
 
 ## Supported agents
 

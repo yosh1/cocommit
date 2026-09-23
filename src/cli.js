@@ -21,7 +21,7 @@ Options:
   --out <path>         SVG output path (default: cocommit.svg)
   --json <path>        also write the raw counts as JSON
   --theme <name>       ${Object.keys(THEMES).join(' | ')} (default: dark)
-  --months <n>         months in the bar chart (default: 12)
+  --months <n>         months measured, for totals and chart (default: 12)
   --visibility <what>  all | public (default: all)
   --title <text>       override the card heading
   --no-animate         render a static card
